@@ -142,3 +142,249 @@ Ahora a quien sea que le compartas esa dirección va a poder ingresar a tu serve
 ### HomeWork
 
 Ahora que ya tenés las herramientas para deployar una app de Node en Digital Ocean, intentá deployar tu proyecto individual en un `droplet` y compartir ela IP con tus compañeros!
+
+# NGINX
+
+![Nginx](https://seeklogo.com/images/N/nginx-logo-FF65602A76-seeklogo.com.png)
+
+**NGINX** es un servidor web muy usado en internet, muchos grandes sitios y plataformas son servidos usando este software. Nginx está codeado en C, y si bien es un servidor web de archivos estáticos, es muy usando como un *load balancer* y *reverse proxy*.
+
+En este workshop vamos a aprender a instalar y configurar *NGINX* en un host con ubuntu (el droplet que hicimos en la primera parte) y vamos a usarlo para:
+- Servir contenido estático: Por ejemplo, una web en REACT.
+- Como reverse proxy, para apuntar a un servidor escrito en Node.
+
+
+## Instalando NGINX
+
+Primero, vamos a conectarnos a nuestra instancia de *Digital Ocean* usando `ssh`.
+Una vez adentro, vamos a instalarlo usando el gestor de paquetes de ubuntu:
+
+```bash
+sudo apt update
+sudo apt install nginx
+```
+
+> La forma de instalar `nginx` dependerá del sistema operativo donde estes trabajando, en este caso estamos usando el droplet que tiene Ubuntu.
+
+### Firewall
+
+Por cuestiones de seguridad, los servidores en la nube no tienen "abierto" todos los puertos. Es decir, que puede ocurrir que tengamos nuestra aplicación o programa *escuchando* en, por ejemplo, el puerto `3000`; pero que ese puerto no este *abierto* en el **firewall**, por lo tanto las conexiónes de afuera que lleguen a ese puerto no funcionarían- dando la sensación que el server está caído, cuando en realidad está funcionando, pero es inaccesible-.
+
+Por lo tanto, vamos a asegurarnos que el puerto `80` este abierto en nuestro server. En ese puerto va a estar escuchando `nginx`.
+En la consola tiramos el siguiente comando: `sudo ufw app list`.
+
+```bash
+root@nefertiti:~# sudo ufw app list
+
+Available applications:
+  Nginx Full
+  Nginx HTTP
+  Nginx HTTPS
+  OpenSSH
+```
+
+El output son las configuraciones por defecto que ofrece cada aplicación, en este caso: 
+
+* **Nginx Full**: Esta config abre el puerto `80` (http por defecto) y el puerto `443` (https).
+* **Nginx HTTP**: Esta abre el puerto `80` solamente.
+* **Nginx HTTPS**: Esta abre solo el puerto `443`.
+* **OpenSSH**: Abre el puerto para poder conectarnos a través de `ssh`.
+
+En este caso vamos activar el perfil `Nginx HTTP` y `OpenSSH`, ya que sólo usaremos el puerto `80`, y tambien queremos dejar el puerto de `ssh` abierto para poder acceder al host.
+
+> En caso de dudas, siempre elegir la configuración más restrictiva.
+
+Para activar los dos perfiles hacemos estos dos comandos:
+
+```bash
+$ sudo ufw allow "OpenSSH"
+$ sudo ufw allow "Nginx HTTP"
+```
+
+Finalmente, nos falta activar el firewall:
+
+```bash
+root@nefertiti:~# sudo ufw enable
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+root@nefertiti:~#
+```
+
+Genial! Ya disponemos de los puertos abiertos!
+
+### Nginx funcionando
+
+Bien, ahora vamos a chequear que `nginx` esté corriendo en nuestro host, para eso tiramos el comando: `systemctl status nginx`. Si vemos el siguiente output quiere decir que esta corriendo correctamente.
+
+```bash
+root@nefertiti:~# systemctl status nginx
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: active (running) since Wed 2021-02-03 16:31:25 UTC; 21h ago
+       Docs: man:nginx(8)
+   Main PID: 1881 (nginx)
+      Tasks: 2 (limit: 1137)
+     Memory: 28.9M
+     CGroup: /system.slice/nginx.service
+             ├─1881 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+             └─1882 nginx: worker process
+```
+
+Genial, ahora si accedemos a la `ip pública` de nuestro host, al puerto 80, vamosa  ver la página por defecto que sirve `nginx`:
+
+![nginx](./img/Welcometonginx.png)
+
+:clap: :clap:
+Ya tenemos nuestro `web server` sirviendo una página estática.
+
+### Configurando Nginx
+
+El próximo paso es configurar `nginx` para poder servir nuestra propia página. Para eso vamos a armar una página con `React` y vamos a deployarla.
+
+Recuerdan que el proceso de *bundelear* un proyecto de React -usando `webpack`- termina dejando el output en una carpeta que generalmente se llama `publi`. Bien, esa carpeta es la que tiene todos los archivos estáticos que queremos servir.
+
+Vamos a crear una nueva app en react:
+
+```bash
+root@nefertiti:~# npx create-react-app my-app
+root@nefertiti:~# cd my-app
+root@nefertiti:~# npm start
+```
+
+Ahora nuestra app esta corriendo en el server de desarrollo en el puerto `3000`.
+
+> En este caso, `create react app` nos da por defecto un mini servidor web en Node que sirve los archivos estáticos. Esto sirve para el desarrollo ya que es rápido y podemos ver el resultado de lo que hacemos. Ahora vamos a pasarlo a `nginx` que nos sirve para produción, ya que es mucho más rápido que node para servir archivos estáticos.
+
+Bien, si intentamos entrar a nuestra ip al puerto `3000` desde el browser deberíamos ver nuestra app:
+
+```
+http://167.172.143.70:3000/
+```
+
+> reemplazen la `ip` con la `ip pública` de su host.
+
+:angry: vamos a ver que no podemos acceder!! Por qué? porque no tenemos el puerto `3000` abierto en el firewall!!
+
+Vamos a cerrar el server con `ctrl + c` y vamos a abrir el puerto `3000`:
+
+```bash
+root@nefertiti:~/my-app# sudo ufw allow 3000
+Rule added
+Rule added (v6)
+root@nefertiti:~/my-app#
+```
+
+Ahora levantamos el server de nuevo y probamos: `npm start`
+> reemplazen la `ip` con la `ip pública` de su host.
+
+:angry: vamos a ver que no podemos acceder!! Por qué? porque no tenemos el puerto `3000` abierto en el firewall!!
+
+Vamos a cerrar el server con `ctrl + c` y vamos a abrir el puerto `3000`:
+
+```bash
+root@nefertiti:~/my-app# sudo ufw allow 3000
+Rule added
+Rule added (v6)
+root@nefertiti:~/my-app# 
+```
+
+Ahora levantamos el server de nuevo y probamos: `npm start`, si entramos de nuevo desde el browser deberíamos ver nuestra app corriendo:
+
+![react](./img/react.png)
+
+### Deployando el build de producción
+
+Ahora vamos a `buildar` nuestro proyecto, es decir, vamos a decirle a `webpack` que haga su magia, y nos deje todo lo estático en un bundle en la carpeta por defecto. Para eso frenamos la ejecución del server dev (siempre con `ctrl + c`) y ejecutamos le siguiente comando:
+
+```bash
+root@nefertiti:~/my-app# npm run build
+
+> my-app@0.1.0 build /root/my-app
+> react-scripts build
+
+Creating an optimized production build...
+Compiled successfully.
+
+File sizes after gzip:
+
+  41.33 KB  build/static/js/2.a4a16643.chunk.js
+  1.59 KB   build/static/js/3.8b397b65.chunk.js
+  1.17 KB   build/static/js/runtime-main.2d881af2.js
+  591 B     build/static/js/main.71923c8e.chunk.js
+  531 B     build/static/css/main.8c8b27cf.chunk.css
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+```
+
+Si todo salió bien, veremos el output anterior y ya tendremos nuestro archivos estáticos en la carpeta `build`:
+
+```bash
+root@nefertiti:~/my-app# cd build/
+root@nefertiti:~/my-app/build# ls
+asset-manifest.json  favicon.ico  index.html  logo192.png  logo512.png  manifest.json  robots.txt  static
+```
+
+Ahora vamos a configurar Nginx para poder servir esos archivos en el puerto `80`.
+
+### Configurando Nginx
+
+Nginx funciona a base de unos archivos de configuración, en estos archivos le indicamos al servidor qué cosa queremos servir, donde están esas cosas y varias configuraciones más.
+
+> `Nginx` se puede usar de muchisimas maneras distintas, y el archivo de configuración puede volverse complicado, en este workshop aprenderemos a usarlo de la manera más simple. Si les gusta y quieren aprender más, internet está lleno de tutoriales para aprender a manejar. Es un skill que suma mucho saber usar `nginx`.
+
+Primero vamos a crear un archivo de configuración nuevo en la carpeta correspondiente (nginx busca los archivos en esa carpeta por defecto):
+
+```bash
+sudo nano /etc/nginx/sites-available/react
+```
+
+Dentro del archivo copiaremos lo siguiente:
+
+```
+server {
+   server_name 167.172.143.70;
+   root /root/my-app/build;
+   index index.html index.htm;
+   location / {
+      try_files $uri /index.html =404;
+   }
+}
+```
+Acá estamos poniendo:
+
+* `server_name`: Indicamos con qué nombre van a llegar los request, puede ser nuestra IP o nuestro dominio si tuvieramos uno, por ejemplo: `prueba.soyhenry.com`.
+* `root`: Path completo donde se encuentran los archivos que queremos servir.
+* `index`: El archivo que tiene que servir por defecto, cuando entren a la URL del server. En general es el `index.html`.
+* `location`: Esta es una directiva para decirle a `nginx` que tiene que servir cuando llegue un request, le estamos diciendo que sirva lo que sea que llegue en la `url`, por ejemplo si ponen `/ejemplo.html`, que sirva el archivo `ejemplo.html`, si no, que sirva `index.html` por defecto, y si no, que tire un 404.
+
+> Para pegar en la terminal es probable que tenga que usar `ctrl + shift + v`, dependiendo de sus sistema operativo.
+
+Vamos a cerrar el archivo nuevo y grabar con `ctrl + x` y luego `yes`.
+
+Ahora con este comando: `sudo ln -s /etc/nginx/sites-available/react /etc/nginx/sites-enabled` vamos a crear una [`enlace simbólica`](https://hipertextual.com/archivo/2014/07/enlaces-fisicos-y-simbolicos-linux/) de nuestro archivo en otra carpeta de nginx (Nginx permite tener archivos de configuración que no están activos -desarrollo- y tener los productivos -postas-, para eso tiene dos carpetas).
+
+Por último tenemos que configurar los permisos para que el proceso de `nginx` pueda acceder a los archivos de `/build`:
+
+```bash
+root@nefertiti:~/my-app# chown www-data -R /root/
+```
+
+> Los permisos de linux son [todo un tema](https://blog.desdelinux.net/permisos-y-derechos-en-linux/), no nos preocupemos por eso ahora!
+
+Bien, ahora podemos reiniciar nginx: 
+
+```bash
+root@nefertiti:~/my-app# sudo systemctl restart nginx
+root@nefertiti:~/my-app# 
+```
+
+Si todo salió bien, podemos ir a la url de nuestra ip y ver nuestra página deployada:
+
+![deployado](./img/deployado.png)
+
+## Homework
+
+Ahora usando `nginx` y siguiendo este workshop, deployá el front-end de tu propia app.
+Al final del día deberías tener, el front-end deployado en `nginx`, y el back-end corriendo tmb en el host virtual.
+
