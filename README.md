@@ -274,20 +274,6 @@ Rule added (v6)
 root@nefertiti:~/my-app#
 ```
 
-Ahora levantamos el server de nuevo y probamos: `npm start`
-> reemplazen la `ip` con la `ip pública` de su host.
-
-:angry: vamos a ver que no podemos acceder!! Por qué? porque no tenemos el puerto `3000` abierto en el firewall!!
-
-Vamos a cerrar el server con `ctrl + c` y vamos a abrir el puerto `3000`:
-
-```bash
-root@nefertiti:~/my-app# sudo ufw allow 3000
-Rule added
-Rule added (v6)
-root@nefertiti:~/my-app# 
-```
-
 Ahora levantamos el server de nuevo y probamos: `npm start`, si entramos de nuevo desde el browser deberíamos ver nuestra app corriendo:
 
 ![react](./img/react.png)
