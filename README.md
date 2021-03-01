@@ -139,10 +139,6 @@ Ahora vamos a la **IP Pública** de nuestro server desde el browser -no olvidar 
 Genial!
 Ahora a quien sea que le compartas esa dirección va a poder ingresar a tu server!
 
-### HomeWork
-
-Ahora que ya tenés las herramientas para deployar una app de Node en Digital Ocean, intentá deployar tu proyecto individual en un `droplet` y compartir ela IP con tus compañeros!
-
 # NGINX
 
 ![Nginx](https://seeklogo.com/images/N/nginx-logo-FF65602A76-seeklogo.com.png)
@@ -369,8 +365,66 @@ Si todo salió bien, podemos ir a la url de nuestra ip y ver nuestra página dep
 
 ![deployado](./img/deployado.png)
 
-## Homework
+# Nginx Reverse Proxy
 
-Ahora usando `nginx` y siguiendo este workshop, deployá el front-end de tu propia app.
-Al final del día deberías tener, el front-end deployado en `nginx`, y el back-end corriendo tmb en el host virtual.
+Por último, vamos a usar `nginx` para desviar el trafico que llega a `http://{tu-ip}/api` al server de Node, que podría estar corriendo en el puerto `300`.
+
+Lo interesante de esto, es que todos los request van al mismo *dominio* (en este caso, ip) pero vamos a poner la regla que si el recurso es `/api` entonces sea redireccionado a Node. De esta forma, no vamos a tener problemas de `CORS`, y el acceso al server es por un único punto.
+
+## Levantando nuestra API
+
+Primero, vamos a crear una API simple en node, y la vamos a dejar corriendo en e `background`, para eso, vamos a usar un módulo de `npm` llamado `pm2`.
+
+```bash
+npm install pm2 -g
+```
+
+`PM2` es un paquete de npm que vamos a instalar de manera global (parametro `-g`), para poder ejecutarlo como un comando del sistema operativo.
+Este comando recibe como argumento un archivo de javascript (`index.js` por ejemplo), y se encarga de ejecutarlo, pero lo que tiene de particular es que lo ejecuta en el background, es decir que vamos a recobrar control de la terminal. Además, si hubiera un error en el programa de node, `PM2` se encarga de reiniciarlo automáticamente (ojo con el `sync: true`).
+
+Vamos a ejecutar el archivo `server.js` que habíamos creado más arriba con `PM2`:
+
+```bash
+pm2 start server.js
+```
+
+si vemos este output, quiere decir que todo salió bien!
+
+![pm2](./img/pm2.png)
+
+Bien, ahora si intentamos acceder a nuestra api usando : `{nuestra-IP}:8080` (en mi caso: `10.116.0.2:8080`), vamos a ver que no podemos ingresar!!!
+Esto es porque habíamos cerrado todos los puertos, menos el `80`.
+
+¿Cómo hacemos para ingresar a una api servida en el puerto `8080` si sólo tenemos abierto el puerto `80` por seguridad?
+Para resolver esto, vamos a usar `nginx` como **REVERSE PROXY**. Es decir, vamos a poner una regla que diga lo siguiente:
+
+* Todo el tráfico que llegue a `{nuestra-ip}/api` será redireccionado *internamente* al puerto 8080.
+
+Para eso vamos a editar nuestro archivo de configuración del server de nginx (/etc/nginx/sites-available/react):
+
+```
+server {
+	server_name 167.172.143.70;
+	root /root/my-app/build/;
+	index index.html index.htm;
+	location / {
+ 		try_files $uri /index.html =404;
+ 	}
+
+	location /api {
+		proxy_pass http://127.0.0.1:8080;
+	}
+}
+```
+
+Con location le decimos a nginx que esa regla es válida para todo lo que llegue a `/api` (parecido a `express`, no?). Y dentro le decimos que haga un `proxy_pass` a una nueva dirección. O sea, que redireccione el request a otro lugar, ese lugar es la ip `127.0.0.1` y el puerto `8080` que es donde está escuchando nuestro server que levantamos con `pm2`!!
+
+Si entramos desde el browser a `{nuestra-ip}/api` deberíamos ver lo que devuelve nuestra API de prueba!!
+
+![proxy](./img/proxy.png)
+
+
+### HomeWork
+
+Ahora que ya tenés las herramientas para deployar una app de Node en Digital Ocean, intentá deployar tu proyecto individual en un `droplet` y compartir ela IP con tus compañeros!
 
