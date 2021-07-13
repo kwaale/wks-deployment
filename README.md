@@ -1,12 +1,12 @@
 <p >
   Entrar a la maquina local por consola ssh <root@ip-direcction>
-	Password VM maquina virtual
-	Hay un servidor de prueba
-	- mkdir ServerPrueba CREAR DIRECTORIO
-	- touch server.js CREAR
-	- nano server.js EDITAR
-	Esta en la direccion ip, puerto 8080
-	
+	<li>Password VM maquina virtual</li>
+	<li>Hay un servidor de prueba</li>
+	<li>- mkdir ServerPrueba CREAR DIRECTORIO</li>
+	<li>- touch server.js CREAR</li>
+	<li>- nano server.js EDITAR</li>
+	<li>- touch server.js CREAR</li>
+	<li>Esta en la direccion ip, puerto 8080</li>
 	
 </p>
 <p >
