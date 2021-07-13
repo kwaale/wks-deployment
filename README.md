@@ -1,4 +1,15 @@
 <p >
+  Entrar a la maquina local por consola ssh <root@ip-direcction>
+	Password VM maquina virtual
+	Hay un servidor de prueba
+	- mkdir ServerPrueba CREAR DIRECTORIO
+	- touch server.js CREAR
+	- nano server.js EDITAR
+	Esta en la direccion ip, puerto 8080
+	
+	
+</p>
+<p >
   <img src='https://static.wixstatic.com/media/85087f_0d84cbeaeb824fca8f7ff18d7c9eaafd~mv2.png/v1/fill/w_160,h_30,al_c,q_85,usm_0.66_1.00_0.01/Logo_completo_Color_1PNG.webp' </img>
 </p>
 
